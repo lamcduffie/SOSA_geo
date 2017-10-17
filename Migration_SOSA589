@@ -1,9 +1,11 @@
+#Solitary Sandpiper z589
+
 #Archival light-level geolocator workshop
-#
-# Oct 29 - Oct 30 2015
-# led by Michael T. Hallworth 
+# Michael T. Hallworth 
 # Smithsonian Migratory Bird Center
-# Script and notes below.
+# 
+#Geolocation analysis with Open Source Tools 2016 North American Ornithological Congress, Washington D.C.
+#Eli Bridge, Simeon Lisovski, Eldar Rakhimberdiev, and Michael Hallworth
 #
 # Set-up--------------------------------------------------------------------------------------------------------------
 # Check to make sure the required packages are installed on your machine
@@ -26,8 +28,10 @@ install_github("SWotherspoon/SGAT")
 install_github("SLisovski/TwGeos") 
 install_github("SLisovski/GeoLight", ref = "Update_2.01", force = T)
 install_github("eldarrak/FLightR")
+install_github("SWotherspoon/BAStag")
 
 library(devtools)
+library(TwGeos)
 library(GeoLight)
 library(TwGeos)
 library(SGAT)
@@ -35,6 +39,7 @@ library(FLightR)
 library(MASS)  #needed for fitting distributions
 library(maptools)
 library(BAStag)
+library(MASS)
 library(sp)
 
 # read in a simple world map from the maptools package #
@@ -61,7 +66,6 @@ head(d.lux)
 CapLocs <- c(-149.750179,  61.284619)
 cap.lat <-61.28
 cap.long <- -149.75
-
 
 # Set the seed
 # The time when we know the geolocator recorded no light.
@@ -154,7 +158,11 @@ points(1,max(z,na.rm=TRUE),col="red",pch=20)
 
 # Initial Locations----------------------------------------------------------------------------------------------
 
-# How to set tolernace values around equinox for South America. #####################################################
+# How do I set tolernace values around equinox for South America? 
+# How do I remove erroneous migration paths such as those along the east coast of the United States during equinox?
+# How do I remove the migration paths into the Gulf of Alaska? These may be due to light-level fluctuations during
+#incubation in June 2017?
+
 
 # Obtain the initial path based on a simple threshold analysis
 d.twl <-subset(twl,twl$Twilight>=calib.dates[1] & !Deleted)
@@ -164,7 +172,7 @@ par(mfrow=c(3,1),mar = c(2,4,1,1)+0.1)
 plot(path$time, path$x[, 2], type = "b", pch = 16, cex = 0.5, ylab = "Lat", xlab = '')
 abline(h = cap.lat)
 abline(v = as.POSIXct("2016-09-23"),col="red",lty=2,lwd=1.5)
-abline(v = as.POSIXct("2017-03-20"),col="red",lty=2,lwd=1.5)
+abline(v = as.POSIXct("2017-03-20"),col="red",lty=2,lwd=1.5)9
 
 plot(path$time, path$x[,1],type="b",pch=16,cex=0.5,ylab="Long",xlab="")
 abline(h = cap.long)
@@ -309,9 +317,8 @@ par(opar)
 ## Let's view the data by month as 2D histograms.
 ## First create an empty background raster
 r <- raster(nrows = 80, ncols = 100, xmn = xlim[1], xmx = xlim[2], ymn = ylim[1], ymx = ylim[2])
-## The slices function in SGAT can cut your data up into days, weeks, months, etc.
-S <- slices(type = "intermediate", weights = rep(0.5, length(fit$time)),
-                 breaks = "months", mcmc = fit, grid = r, include.lowest = FALSE, right = FALSE)
+## The slices function in SGAT can cut your data up into days, weeks, months, quarters, years.
+s <- slices(type = "intermediate", breaks = "month", mcmc = fit, grid = r)
 
 opar <- par(mfrow = c(4,3), mar = c(0,0,0,0), oma = c(0.4,0.4,0.4,0.4))
 for (k in sliceIndices(s)) {   #loop through the slices to plot the data
@@ -326,10 +333,11 @@ for (k in sliceIndices(s)) {   #loop through the slices to plot the data
 par(opar)
 
 #Wish List-------------------------------------------------------------------------------------------------
-#Plot maps for a single southboaund and single north bound migration route.
+#Plot maps for a single southbound and single north bound migration route.
 #Plot maps on satellite imagery with state and country borders.
-#Determine and then Plot important stop-over locations
+#Determine and then Plot important stop-over locations.
 #Set tolerance values for South American equinox to remove erroneous migration paths.
-#What is the ideal number of iterations to have for the MCMC model?
 
-#END-------------------------------------------------------------------------------------------------------
+#Questions-------------------------------------------------------------------------------------------------------
+#What is the ideal number of iterations to have for the MCMC model?
+#During incubation, light-levels get skewed. Can I remove data points during the incubation period?
