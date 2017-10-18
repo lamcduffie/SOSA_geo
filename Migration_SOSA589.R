@@ -51,6 +51,7 @@ library(FLightR)
 library(MASS)  #needed for fitting distributions
 library(maptools)
 library(MASS)
+library(raster)
 library(sp)
 library(SGAT)
 library(LLmig)
@@ -166,7 +167,7 @@ polygon(x = as.POSIXct(c("2017-05-08","2017-05-17","2017-05-17","2017-05-08")),
         border = rgb(100,100,100,100,maxColorValue = 255))
 
 
-calib.dates <- as.POSIXct(c("2017-05-08","2017-05-17"))
+calib.dates <- as.POSIXct(c("2017-05-08","2017-05-17"), tz = "GMT")
 
 # Extract twilight data during calibration period
 cal.data<-subset(twl,twl$Twilight>=calib.dates[1] & twl$Twilight<=calib.dates[2])
@@ -235,7 +236,13 @@ points(1,max(z,na.rm=TRUE),col="red",pch=20)
 
 
 # Obtain the initial path based on a simple threshold analysis
-d.twl <-subset(twl,twl$Twilight>=calib.dates[1] & !Deleted)
+
+# Up above - I changed the calibration dates May 08 2017 - near the end of the file. 
+# I didn't change this bit of code - so there are only a few days until you capture it
+# from May 08 2017. I removed the calib.dates subset. It should now use all the data
+# until captured that aren't deleted. 
+
+d.twl <-subset(twl,!Deleted)
 
 path <- thresholdPath(twilight = d.twl$Twilight, 
                       rise = d.twl$Rise, 
@@ -377,10 +384,11 @@ fit <- estelleMetropolis(model = model,
 #Plot--------------------------------------------------------------------------------------------------------------
 
 #This step makes an empty raster #
-r <- raster(xmn = xlim[1],
-            xmx = xlim[2], 
-            ymn = ylim[1], 
-            ymx = ylim[2], res = c(0.25,0.25))
+r <- raster::raster(xmn = xlim[1],
+            	  xmx = xlim[2], 
+           		  ymn = ylim[1], 
+                    ymx = ylim[2],
+                    res = c(0.25,0.25))
 
 # set plot parameters 
 xlim = c(-180, 0)
