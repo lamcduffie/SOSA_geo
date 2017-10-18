@@ -468,7 +468,10 @@ plot(SOSA$movements[[i]],
 # The link below is a recent one - not much now cover
 # https://neo.sci.gsfc.nasa.gov/view.php?datasetId=BlueMarbleNG-TB&date=2004-07-01 #
 
-BlueMarb <- raster::brick(list.files("Spatial_Layers/",pattern = "*.TIFF",full.names = TRUE))
+#Download and open raster.
+list.files(path = "T:/McDuffie/SOSA_GEO/SOSA_R/SOSA_589", pattern = NULL,
+           full.names = TRUE)
+BlueMarb <- raster::brick("T:/McDuffie/SOSA_GEO/SOSA_R/SOSA_589/BlueMarbleNG.tiff") 
 
 # Plot fall migration to set plot region #
 plot(FallMig)
