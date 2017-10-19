@@ -309,7 +309,42 @@ x0[fixedx, 2] <- cap.lat
 xlim <- c(-180, -30)
 ylim <- c(-80, 90)
 
-# Spatial Mask (do not use for shorebirds)
+# Land Mask-------------------------------------------------------------------------------------------------------
+
+land.mask <- function(xlim, ylim, n = 4, land = TRUE) {
+  #Create a raster grid of "NA" that fills the x and y limits. Use a lat/lon projections
+  #resolution is 1/n degrees
+  r <- raster(nrows = n * diff(ylim), ncols = n * diff(xlim), xmn = xlim[1], 
+              xmx = xlim[2], ymn = ylim[1], ymx = ylim[2], crs = proj4string(wrld_simpl))
+  #Replace the NA values with 1 where there is land
+  #This code is kind of complicated because it allows for grids that wrap around the date line
+  r <- cover(rasterize(elide(wrld_simpl, shift = c(-360, 0)), r, 1, silent = TRUE), 
+             rasterize(wrld_simpl, r, 1, silent = TRUE), 
+             rasterize(elide(wrld_simpl, shift = c(360, 0)), r, 1, silent = TRUE))
+  
+  #make the raster a matrix with column order reversed and NA set to TRUE
+  r <- as.matrix(is.na(r))[nrow(r):1, ]
+  
+  if (land) #reverse the TRUE/FALSE if land is set to TRUE
+    r <- !r
+
+xbin <- seq(xlim[1], xlim[2], length = ncol(r) + 1)
+ybin <- seq(ylim[1], ylim[2], length = nrow(r) + 1)
+  
+  function(p) {
+    r[cbind(.bincode(p[, 2], ybin), .bincode(p[, 1], xbin))]
+  }
+}
+
+is.dist <- distribution.mask(shape=Land,
+                             xlim = xlim,
+                             ylim = ylim,
+                             land = TRUE)
+
+log.prior <- function(p) {
+  f <- is.dist(p)
+  ifelse(f | is.na(f), 0, -10)
+}
 
 #Estelle Model#########################################################################################################
 
@@ -445,7 +480,7 @@ FallMig <- raster::spLines(sp::SpatialPoints(cbind(c(CapLocs[1],SOSA$Schedule[1:
                                                    c(CapLocs[2],SOSA$Schedule[1:7,6]))))
 
 
-SpringMig <- raster::spLines(sp::SpatialPoints(SOSA$Schedule[8:15,c(3,6)]))
+SpringMig <- raster::spLines(sp::SpatialPoints(SOSA$Schedule[8:14,c(3,6)]))
 
 plot(FallMig)
 for(i in 1:7){
@@ -455,7 +490,7 @@ plot(wrld_simpl, add = TRUE)
 points(CapLocs[1],CapLocs[2],cex = 2,pch = 19)
 
 plot(SpringMig, add = TRUE, col = "red")
-for(i in 8:15){
+for(i in 8:14){
 plot(SOSA$movements[[i]],
      col = rev(bpy.colors(25)),
      add = TRUE,
