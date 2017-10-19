@@ -145,7 +145,7 @@ cal.data<- data.frame(Twilight = twilight(rep(tm, each = 2),
 
 ##### Plot the light data and sunrise suset times at capture location ######
 lightImage(tagdata = d.lux,
-           offset = 18,
+           offset = 19,
            zlim = c(0,5))
 tsimagePoints(cal.data$Twilight, 
               offset = 19, 
