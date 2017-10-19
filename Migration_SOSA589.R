@@ -480,7 +480,7 @@ FallMig <- raster::spLines(sp::SpatialPoints(cbind(c(CapLocs[1],SOSA$Schedule[1:
                                                    c(CapLocs[2],SOSA$Schedule[1:7,6]))))
 
 
-SpringMig <- raster::spLines(sp::SpatialPoints(SOSA$Schedule[8:14,c(3,6)]))
+SpringMig <- raster::spLines(sp::SpatialPoints(SOSA$Schedule[8:12,c(3,6)]))
 
 plot(FallMig)
 for(i in 1:7){
@@ -490,7 +490,7 @@ plot(wrld_simpl, add = TRUE)
 points(CapLocs[1],CapLocs[2],cex = 2,pch = 19)
 
 plot(SpringMig, add = TRUE, col = "red")
-for(i in 8:14){
+for(i in 8:12){
 plot(SOSA$movements[[i]],
      col = rev(bpy.colors(25)),
      add = TRUE,
