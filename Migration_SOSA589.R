@@ -474,7 +474,7 @@ tsimagePoints(twl$Twilight,
 stationary.periods <- data.frame(start = "2016-11-01",
                                  stop =  "2017-03-01")
 
-tiff("C:/Users/hallworthm/Desktop/Figure1.tiff", width = 3600, height = 3600, res = 600)
+tiff("C:/Users/lmcduffie/Desktop/Figure1.tiff", width = 3600, height = 3600, res = 600)
 SOSA <- LLmig::MigSchedule(MCMC = S, 
                            mig.quantile = 0.95,
                            stationary.periods = stationary.periods,
@@ -510,6 +510,7 @@ FallMig <- raster::spLines(sp::SpatialPoints(cbind(c(CapLocs[1],SOSA$Schedule[1:
 SpringMig <- raster::spLines(sp::SpatialPoints(SOSA$Schedule[winter:nrow(SOSA$Schedule),c(3,6)]))
 
 # Make original plot with spring and fall stops + the migraion lines #
+tiff("C:/Users/lmcduffie/Desktop/Figure2.tiff", width = 3600, height = 3600, res = 600)
 plot(FallMig)
 for(i in 1:winter){
 plot(SOSA$movements[[i]],add = TRUE,legend = FALSE)
@@ -571,6 +572,9 @@ polygon(x = c(stopInDays,rev(stopInDays)),
 
 # add stop-over duration length to the end of the polygon #
 text(x = max(stopInDays)+10,y = i, length(stopInDays),cex = 0.5)
+
+dev.off() # turns out you need to close the device twice - not sure why exactly.
+dev.off() # here is the second close  
 }
 
 
