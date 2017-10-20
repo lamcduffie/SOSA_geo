@@ -44,7 +44,6 @@ install_github("MTHallworth/LLmig") # you may want to try the MigSchedule functi
 
 # Load required packages - note I changed where SGAT gets loaded #
 
-library(TwGeos)
 library(GeoLight)
 library(TwGeos)
 library(FLightR)
@@ -311,16 +310,24 @@ ylim <- c(-80, 90)
 
 # Land Mask-------------------------------------------------------------------------------------------------------
 
-land.mask <- function(xlim, ylim, n = 4, land = TRUE) {
+land.mask <- function(shape, xlim, ylim, res = c(0.25,0.25), land = TRUE) {
   #Create a raster grid of "NA" that fills the x and y limits. Use a lat/lon projections
-  #resolution is 1/n degrees
-  r <- raster(nrows = n * diff(ylim), ncols = n * diff(xlim), xmn = xlim[1], 
-              xmx = xlim[2], ymn = ylim[1], ymx = ylim[2], crs = proj4string(wrld_simpl))
+  #
+  # Changing the setting the resolution is a better approach than 1/n degrees. 
+  # This ensures that the resolution is square - that's not always the case with 1/n
+  r <- raster(xmn = xlim[1], 
+              xmx = xlim[2], 
+              ymn = ylim[1],
+              ymx = ylim[2], 
+              res = res, 
+              crs = proj4string(shape))
+
   #Replace the NA values with 1 where there is land
   #This code is kind of complicated because it allows for grids that wrap around the date line
-  r <- cover(rasterize(elide(wrld_simpl, shift = c(-360, 0)), r, 1, silent = TRUE), 
-             rasterize(wrld_simpl, r, 1, silent = TRUE), 
-             rasterize(elide(wrld_simpl, shift = c(360, 0)), r, 1, silent = TRUE))
+
+  r <- cover(rasterize(shape, r, 1, silent = TRUE), 
+             rasterize(shape, r, 1, silent = TRUE), 
+             rasterize(shape, r, 1, silent = TRUE))
   
   #make the raster a matrix with column order reversed and NA set to TRUE
   r <- as.matrix(is.na(r))[nrow(r):1, ]
@@ -336,10 +343,16 @@ ybin <- seq(ylim[1], ylim[2], length = nrow(r) + 1)
   }
 }
 
-is.dist <- distribution.mask(shape=Land,
-                             xlim = xlim,
-                             ylim = ylim,
-                             land = TRUE)
+# Remove Caribbean from potential stop-over locations #
+NS_AM <- wrld_simpl[which(wrld_simpl$SUBREGION == 13 | 
+                          wrld_simpl$SUBREGION == 21 |
+                          wrld_simpl$SUBREGION == 5),]
+
+
+is.dist <- land.mask(shape=NS_AM,
+                     xlim = xlim,
+                     ylim = ylim,
+                     land = TRUE)
 
 log.prior <- function(p) {
   f <- is.dist(p)
@@ -361,10 +374,14 @@ model<- thresholdModel(d.twl$Twilight,d.twl$Rise,
                        twilight.model="ModifiedLogNormal",
                        alpha=alpha,
                        beta=beta,
+                       # Here is where we set the constraints for land
+                       logp.x = log.prior, 
+                       logp.z = log.prior,
                        x0=x0,
                        z0=z0,
                        zenith=zenith0,
                        fixedx=fixedx)
+
 # Here you need to set the first few locations as "known locations"-fixed locations. These are periods  
 # when you know the bird was at a specific location - capture site - when first deployed and captured. 
 
@@ -455,15 +472,19 @@ tsimagePoints(twl$Twilight,
 # should be a row 
 
 stationary.periods <- data.frame(start = "2016-11-01",
-                                 stop = "2017-03-01")
+                                 stop =  "2017-03-01")
 
+tiff("C:/Users/hallworthm/Desktop/Figure1.tiff", width = 3600, height = 3600, res = 600)
 SOSA <- LLmig::MigSchedule(MCMC = S, 
                            mig.quantile = 0.95,
                            stationary.periods = stationary.periods,
-                           stationary.duration = 1,
+                           stationary.duration = 0.5,
                            prob = 0.95,
                            rm.lat.equinox = FALSE,
                            days.omit = 0)
+
+dev.off() # turns out you need to close the device twice - not sure why exactly.
+dev.off() # here is the second close
 
 # See what the MigSchedule function produces - 
 str(SOSA,1)
@@ -476,26 +497,82 @@ str(SOSA,1)
 # Take a look at the migration schedule
 SOSA$Schedule
 
-FallMig <- raster::spLines(sp::SpatialPoints(cbind(c(CapLocs[1],SOSA$Schedule[1:7,3]),# Longitudes
-                                                   c(CapLocs[2],SOSA$Schedule[1:7,6]))))
+# Here I define the winter location as the longest stop-over duration
+winter <- which(SOSA$Schedule$duration == max(SOSA$Schedule$duration))
 
 
-SpringMig <- raster::spLines(sp::SpatialPoints(SOSA$Schedule[8:12,c(3,6)]))
+# Below is a basic plot that resembles the OSFL map. There are no error bars on the dates because 
+# it's only a single bird - but here is the code to make the map. 
+FallMig <- raster::spLines(sp::SpatialPoints(cbind(c(CapLocs[1],SOSA$Schedule[1:winter,3]),# Longitudes
+                                                   c(CapLocs[2],SOSA$Schedule[1:winter,6]))))
 
+
+SpringMig <- raster::spLines(sp::SpatialPoints(SOSA$Schedule[winter:nrow(SOSA$Schedule),c(3,6)]))
+
+# Make original plot with spring and fall stops + the migraion lines #
 plot(FallMig)
-for(i in 1:7){
+for(i in 1:winter){
 plot(SOSA$movements[[i]],add = TRUE,legend = FALSE)
 }
 plot(wrld_simpl, add = TRUE)
 points(CapLocs[1],CapLocs[2],cex = 2,pch = 19)
 
 plot(SpringMig, add = TRUE, col = "red")
-for(i in 8:12){
+for(i in (winter+1):nrow(SOSA$Schedule)){
 plot(SOSA$movements[[i]],
      col = rev(bpy.colors(25)),
      add = TRUE,
      legend = FALSE)
 }
+
+# Here we add the inset plot # 
+par(new = TRUE, fig = c(0,0.6,0,0.6),bty = "l")
+
+# first make a sequence of the days that are in the tracking data #
+days <- seq.Date(as.Date(d.lux[1,1]),as.Date(d.lux[nrow(d.lux),1]),by = "day")
+
+# Make an empty plot so we can add things to it #
+plot(NA,
+     ylim = c(0,nrow(SOSA$Schedule)+1),
+     xlim = c(0,length(days)),
+     yaxt = "n",
+     xaxt = "n",
+     ylab = "Stop",
+     xlab = "Ordinal day")
+
+# add text to the axes #
+axis(1,at = seq(1,length(days),10),
+       labels = format(days[seq(1,length(days),10)],"%j"),cex = 0.8)
+axis(2, at = 1:nrow(SOSA$Schedule),labels = 1:nrow(SOSA$Schedule),las = 2, cex = 0.8)
+
+# determine when the change the colors - here we change the colors after the longest
+# duration (i.e., winter)
+
+winter <- which(SOSA$Schedule$duration == max(SOSA$Schedule$duration))
+
+# Loop through all the stops defined by MigSchedule and plot the duration of each
+# stop and the days the bird was there #
+
+for(i in 1:nrow(SOSA$Schedule)){
+
+# make a vector containing the days the bird was at the stop #
+stopDur <- seq.Date(from = as.Date(SOSA$Schedule$arrival.date[i]),
+                    to = as.Date(SOSA$Schedule$departure.date[i]),
+                    by = "day")
+
+# find out which days in the tracking data correspond to the stop-over days #
+stopInDays <- which(days %in% stopDur)
+
+# make a polygon on the empty plot - if the stop is before the longest stop
+# or the longest stop - it's color will be green - otherwise blue"
+polygon(x = c(stopInDays,rev(stopInDays)),
+        y = c(rep(i-0.25,length(stopInDays)),rep(i+0.25,length(stopInDays))),
+        col = ifelse(i<= winter,"green","blue"))
+
+# add stop-over duration length to the end of the polygon #
+text(x = max(stopInDays)+10,y = i, length(stopInDays),cex = 0.5)
+}
+
 
 #Plot maps on satellite imagery with state and country borders.
 # There are quite a few ways to do this - but here is one way. 
