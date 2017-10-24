@@ -154,16 +154,16 @@ tsimagePoints(twl$Twilight,
 
 #Using this next bit of code you can click on the lightImage plot and find dates 
 # as.POSIXct(locator(n = 2)$x,origin = "1970-01-01",tz = "GMT")
-# "2016-07-03 19:32:26 GMT" "2016-07-07 07:53:09 GMT"
+# "2016-06-28 15:25:31 GMT" "2016-07-10 02:03:30 GMT"
 
 # This plots a polygon around the area that I used to determine Zenith Angles #
-polygon(x = as.POSIXct(c("2016-07-03","2016-07-07","2016-07-07","2016-07-03")),
+polygon(x = as.POSIXct(c("2016-06-28","2016-07-10","2016-07-10","2016-06-28")),
         y = c(4+24,4+24,14+24,14+24), 
         col = rgb(100,100,100,100,maxColorValue = 255),
         border = rgb(100,100,100,100,maxColorValue = 255))
 
 
-calib.dates <- as.POSIXct(c("2016-07-03","2016-07-07"), tz = "GMT")
+calib.dates <- as.POSIXct(c("2016-06-28","2016-07-10"), tz = "GMT")
 
 # Extract twilight data during calibration period
 cal.data<-subset(twl,twl$Twilight>=calib.dates[1] & twl$Twilight<=calib.dates[2])
@@ -187,7 +187,7 @@ twl_dev <- ifelse(cal.data$Rise, as.numeric(difftime(cal.data[,1], twl_t, units 
 twl_dev<-subset(twl_dev, subset=twl_dev>=0)
 
 # Describe the distribution of the error 
-fitml <- fitdistr(twl_dev, "log-Normal")
+fitml <- fitdistr(twl_dev, "log-normal")
 head (fitml)
 
 # save the Twilight model parameters
@@ -206,8 +206,7 @@ hist(twl_dev, freq = F,
 axis(2,las=2)
 lines(seq, dlnorm(seq, alpha[1], alpha[2]), col = "firebrick", lwd = 3,lty = 2)
 #look at plot to see fit of data matches red dotted line, if not adjust fitml = "log-normal" to either normal or gamma
-
-##### Cannot examine the fit of this data because there is no red dotted line.
+####Right side of plot does not fit.
 
 
 # Store the zenith (sun-elevation angle)
