@@ -153,16 +153,16 @@ tsimagePoints(twl$Twilight,
 
 #Using this next bit of code you can click on the lightImage plot and find dates 
 # as.POSIXct(locator(n = 2)$x,origin = "1970-01-01",tz = "GMT")
-# "2017-05-08 04:15:19 GMT" "2017-05-17 17:40:58 GMT"
+# "2017-05-05 04:15:19 GMT" "2017-05-15 17:40:58 GMT"
 
 # This plots a polygon around the area that I used to determine Zenith Angles #
-polygon(x = as.POSIXct(c("2017-05-08","2017-05-17","2017-05-17","2017-05-08")),
+polygon(x = as.POSIXct(c("2017-05-05","2017-05-15","2017-05-15","2017-05-05")),
         y = c(4+24,4+24,14+24,14+24), 
         col = rgb(100,100,100,100,maxColorValue = 255),
         border = rgb(100,100,100,100,maxColorValue = 255))
 
 
-calib.dates <- as.POSIXct(c("2017-05-08","2017-05-17"), tz = "GMT")
+calib.dates <- as.POSIXct(c("2017-05-05","2017-05-15"), tz = "GMT")
 
 # Extract twilight data during calibration period
 cal.data1<-subset(twl,twl$Twilight>=calib.dates[1] & twl$Twilight<=calib.dates[2])
@@ -290,12 +290,12 @@ beta <- c(0.7, 0.08)
 # Here I added Fixed = TRUE to the end of the file  - from May 08 on.
 
 # Find which row in the twl file is May 08 2017 # 
-May08 <- max(which(strptime(twl$Twilight,format = "%Y-%m-%d") == "2017-05-08"))
+May05 <- max(which(strptime(twl$Twilight,format = "%Y-%m-%d") == "2017-05-05"))
 
 fixedx<- rep(F, nrow(x0))
 fixedx[1:5] <- TRUE
 # Fixed from May - end of file #
-fixedx[May08:nrow(x0)] <- TRUE
+fixedx[May05:nrow(x0)] <- TRUE
 
 x0[fixedx, 1] <- cap.long
 x0[fixedx, 2] <- cap.lat
