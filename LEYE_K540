@@ -283,8 +283,6 @@ z0<- trackMidpts(x0)
 # Set flight parameters
 beta <- c(0.7, 0.08)
 
-
-
 # This function sets the known location of the bird - capture location and recapture location
 # This is where you can add ancillary resighting events; known locations throughout annual cycle
 # Here I added Fixed = TRUE to the end of the file  - from May 08 on.
@@ -304,56 +302,7 @@ x0[fixedx, 2] <- cap.lat
 xlim <- c(-180, -30)
 ylim <- c(-80, 90)
 
-# Land Mask-------------------------------------------------------------------------------------------------------
-
-land.mask <- function(shape, xlim, ylim, res = c(0.25,0.25), land = TRUE) {
-  #Create a raster grid of "NA" that fills the x and y limits. Use a lat/lon projections
-  #
-  # Changing the setting the resolution is a better approach than 1/n degrees. 
-  # This ensures that the resolution is square - that's not always the case with 1/n
-  r <- raster(xmn = xlim[1], 
-              xmx = xlim[2], 
-              ymn = ylim[1],
-              ymx = ylim[2], 
-              res = res, 
-              crs = proj4string(shape))
-  
-  #Replace the NA values with 1 where there is land
-  #This code is kind of complicated because it allows for grids that wrap around the date line
-  
-  r <- cover(rasterize(shape, r, 1, silent = TRUE), 
-             rasterize(shape, r, 1, silent = TRUE), 
-             rasterize(shape, r, 1, silent = TRUE))
-  
-  #make the raster a matrix with column order reversed and NA set to TRUE
-  r <- as.matrix(is.na(r))[nrow(r):1, ]
-  
-  if (land) #reverse the TRUE/FALSE if land is set to TRUE
-    r <- !r
-  
-  xbin <- seq(xlim[1], xlim[2], length = ncol(r) + 1)
-  ybin <- seq(ylim[1], ylim[2], length = nrow(r) + 1)
-  
-  function(p) {
-    r[cbind(.bincode(p[, 2], ybin), .bincode(p[, 1], xbin))]
-  }
-}
-
-# Remove Caribbean from potential stop-over locations #
-NS_AM <- wrld_simpl[which(wrld_simpl$SUBREGION == 13 | 
-                            wrld_simpl$SUBREGION == 21 |
-                            wrld_simpl$SUBREGION == 5),]
-
-
-is.dist <- land.mask(shape=NS_AM,
-                     xlim = xlim,
-                     ylim = ylim,
-                     land = TRUE)
-
-log.prior <- function(p) {
-  f <- is.dist(p)
-  ifelse(f | is.na(f), 0, -10)
-}
+# Land Mask (removed for this bird because of the falese movements between Central America and the United States during the winter.-------------------------------------------------------------------------------------------------------
 
 #Estelle Model#########################################################################################################
 
@@ -370,9 +319,6 @@ model<- thresholdModel(d.twl$Twilight,d.twl$Rise,
                        twilight.model="ModifiedLogNormal",
                        alpha=alpha,
                        beta=beta,
-                       # Here is where we set the constraints for land
-                       logp.x = log.prior, 
-                       logp.z = log.prior,
                        x0=x0,
                        z0=z0,
                        zenith=zenith0,
