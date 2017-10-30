@@ -572,10 +572,11 @@ polygon(x = c(stopInDays,rev(stopInDays)),
 
 # add stop-over duration length to the end of the polygon #
 text(x = max(stopInDays)+10,y = i, length(stopInDays),cex = 0.5)
+}
 
 dev.off() # turns out you need to close the device twice - not sure why exactly.
-dev.off() # here is the second close  
-}
+dev.off() # here is the second close  - I didn't need this dev.off here
+
 
 
 #Plot maps on satellite imagery with state and country borders.
