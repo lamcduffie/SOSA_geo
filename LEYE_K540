@@ -283,6 +283,8 @@ z0<- trackMidpts(x0)
 # Set flight parameters
 beta <- c(0.7, 0.08)
 
+
+
 # This function sets the known location of the bird - capture location and recapture location
 # This is where you can add ancillary resighting events; known locations throughout annual cycle
 # Here I added Fixed = TRUE to the end of the file  - from May 08 on.
@@ -302,7 +304,7 @@ x0[fixedx, 2] <- cap.lat
 xlim <- c(-180, -30)
 ylim <- c(-80, 90)
 
-# Land Mask (removed for this bird because of the falese movements between Central America and the United States during the winter.-------------------------------------------------------------------------------------------------------
+# Land Mask (Not for this bird because of repeated trips to United States in winter)-------------------------------------------------------------------------------------------------------
 
 #Estelle Model#########################################################################################################
 
@@ -413,8 +415,8 @@ tsimagePoints(twl$Twilight,
 # you can add as many of these as you want - each stationary time
 # should be a row 
 
-stationary.periods <- data.frame(start = "2014-11-01",
-                                 stop =  "2015-03-01")
+stationary.periods <- data.frame(start = "2015-01-01",
+                                 stop =  "2015-02-01")
 
 tiff("C:/Users/lmcduffie/Desktop/Figure1.tiff", width = 3600, height = 3600, res = 600)
 LEYE <- LLmig::MigSchedule(MCMC = S, 
@@ -453,7 +455,7 @@ FallMig <- raster::spLines(sp::SpatialPoints(cbind(c(CapLocs[1],LEYE$Schedule[1:
 SpringMig <- raster::spLines(sp::SpatialPoints(LEYE$Schedule[winter:nrow(LEYE$Schedule),c(3,6)]))
 
 # Make original plot with spring and fall stops + the migraion lines #
-
+tiff("C:/Users/lmcduffie/Desktop/Figure2.tiff", width = 6000, height = 5600, res = 600)
 plot(FallMig)
 for(i in 1:winter){
   plot(LEYE$movements[[i]],add = TRUE,legend = FALSE)
@@ -515,62 +517,8 @@ for(i in (winter+1):nrow(LEYE$Schedule)){
   
   # add stop-over duration length to the end of the polygon #
   text(x = max(stopInDays)+10,y = i, length(stopInDays),cex = 0.5)
-
+  
 }
 
-
-#Plot maps on satellite imagery with state and country borders.
-# There are quite a few ways to do this - but here is one way. 
-# Obtain a BlueMarble image manually then plot the results onto that 
-# The link below is a recent one - not much now cover
-# https://neo.sci.gsfc.nasa.gov/view.php?datasetId=BlueMarbleNG-TB&date=2004-07-01 #
-
-#Download and open raster.
-list.files(path = "T:/McDuffie/SOSA_GEO/SOSA_R/SOSA_589", pattern = NULL,
-           full.names = TRUE)
-BlueMarb <- raster::brick("T:/McDuffie/SOSA_GEO/SOSA_R/SOSA_589/BlueMarbleNG.tiff") 
-
-# Plot fall migration to set plot region #
-plot(FallMig)
-
-# add map using real-world colors #
-plotRGB(BlueMarb, colNA = "black", maxpixels = 6480000, add = TRUE)
-
-# add the migration path back #
-plot(FallMig, add = TRUE, col = "red")
-
-# add country borders # 
-plot(wrld_simpl, add = TRUE, border = "yellow")
-
-# add one of the stop-over locations #
-plot(SOSA$movements[[5]],add = TRUE, col = bpy.colors(20), alpha = 0.4, legend = FALSE)
-
-##### Here is another way to get border shapefiles ###
-# You can get the data directly from the raster package #
-
-# raster::getData("countries") # this returns an error but the data are available here 
-#'http://biogeo.ucdavis.edu/data/gadm2.8/countries_gadm28.rds'
-
-#Canada <- raster::getData("GADM", country = "Canada", level = 1)
-#States <- raster::getData("GADM", country = "United States", level = 1)
-
-#plot(Canada)
-#plot(States, add = TRUE)
-
-# Here is a third way # 
-
-plot(dismo::gmap(FallMig, type = "satellite", lonlat = TRUE))
-plot(FallMig, add = TRUE, col = "red")
-
-#Set tolerance values for South American equinox to remove erroneous migration paths.
-# See above
-
-#Questions-------------------------------------------------------------------------------------------------------
-#What is the ideal number of iterations to have for the MCMC model?
-# The way you have it set up now - 2000 iterations - then summarize, then 2000 then summarize then 5000 
-# is how I've done it in the past - you can do more but as long as you summarize between runs you 
-# are using all the data. A few thousand is probably enough - it looks good for this bird. 
-
-#During incubation, light-levels get skewed. Can I remove data points during the incubation period?
-# I set those locations to fixed  - another option is to just remove them. Both methods work and 
-# acheive pretty much the same thing. 
+dev.off() # turns out you need to close the device twice - not sure why exactly.
+dev.off() # here is the second close  - I didn't need this dev.off here
