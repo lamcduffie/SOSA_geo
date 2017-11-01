@@ -1,2 +1,0 @@
-# SOSA_geo
-test
