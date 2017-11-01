@@ -4,6 +4,9 @@
 # Michael T. Hallworth 
 # Smithsonian Migratory Bird Center
 # 
+#Geolocation analysis with Open Source Tools 2016 North American Ornithological Congress, Washington D.C.
+#Eli Bridge, Simeon Lisovski, Eldar Rakhimberdiev, and Michael Hallworth
+#
 # Set-up--------------------------------------------------------------------------------------------------------------
 # Check to make sure the required packages are installed on your machine
 # If not, they will be installed
@@ -73,7 +76,7 @@ head(d.lux)
 #Twilight adjustments--------------------------------------------------------------------------------------------------
 
 # Set the capture coordinates for each bird #
-CapLocs <- c(-149.750179,  61.284619)
+CapLocs <- c(-149.7516,  61.283758)
 cap.lat <-61.28
 cap.long <- -149.75
 
@@ -157,13 +160,13 @@ tsimagePoints(twl$Twilight,
 # "2016-06-28 15:25:31 GMT" "2016-07-10 02:03:30 GMT"
 
 # This plots a polygon around the area that I used to determine Zenith Angles #
-polygon(x = as.POSIXct(c("2016-06-28","2016-07-10","2016-07-10","2016-06-28")),
+polygon(x = as.POSIXct(c("2016-07-10","2016-07-10","2016-07-10","2016-06-28")),
         y = c(4+24,4+24,14+24,14+24), 
         col = rgb(100,100,100,100,maxColorValue = 255),
         border = rgb(100,100,100,100,maxColorValue = 255))
 
 
-calib.dates <- as.POSIXct(c("2016-06-28","2016-07-10"), tz = "GMT")
+calib.dates <- as.POSIXct(c("2016-07-10","2016-07-14"), tz = "GMT")
 
 # Extract twilight data during calibration period
 cal.data<-subset(twl,twl$Twilight>=calib.dates[1] & twl$Twilight<=calib.dates[2])
@@ -206,7 +209,7 @@ hist(twl_dev, freq = F,
 axis(2,las=2)
 lines(seq, dlnorm(seq, alpha[1], alpha[2]), col = "firebrick", lwd = 3,lty = 2)
 #look at plot to see fit of data matches red dotted line, if not adjust fitml = "log-normal" to either normal or gamma
-####Right side of plot does not fit.
+#examine fit
 
 
 # Store the zenith (sun-elevation angle)
@@ -245,7 +248,7 @@ d.twl <-subset(twl,!Deleted)
 path <- thresholdPath(twilight = d.twl$Twilight, 
                       rise = d.twl$Rise, 
                       zenith=zenith0,
-                      tol= c(0.16,0.09)) # Here is where you can mess with the tol values
+                      tol= c(0.17,0.10)) # Here is where you can mess with the tol values
 # the first value is fall - the second is spring
 
 # NOTE - setting the tol values is a bit trial and error - I settled one these two values because they seem 
@@ -293,6 +296,7 @@ beta <- c(0.7, 0.08)
 
 fixedx<- rep(F, nrow(x0))
 fixedx[1:5] <- TRUE
+
 
 x0[fixedx, 1] <- cap.long
 x0[fixedx, 2] <- cap.lat
@@ -491,7 +495,6 @@ str(SOSA,1)
 SOSA$Schedule
 
 # Here I define the winter location as the longest stop-over duration
-tiff("C:/Users/lmcduffie/Desktop/Figure2.tiff", width = 3600, height = 3600, res = 600)
 winter <- which(SOSA$Schedule$duration == max(SOSA$Schedule$duration))
 
 
@@ -504,7 +507,7 @@ FallMig <- raster::spLines(sp::SpatialPoints(cbind(c(CapLocs[1],SOSA$Schedule[1:
 SpringMig <- raster::spLines(sp::SpatialPoints(SOSA$Schedule[winter:nrow(SOSA$Schedule),c(3,6)]))
 
 # Make original plot with spring and fall stops + the migraion lines #
-tiff("C:/Users/lmcduffie/Desktop/Figure2.tiff", width = 3600, height = 3600, res = 600)
+tiff("C:/Users/lmcduffie/Desktop/Figure2.tiff", width = 5600, height = 6600, res = 600)
 plot(FallMig)
 for(i in 1:winter){
   plot(SOSA$movements[[i]],add = TRUE,legend = FALSE)
@@ -518,42 +521,42 @@ for(i in (winter+1):nrow(SOSA$Schedule)){
        col = rev(bpy.colors(25)),
        add = TRUE,
        legend = FALSE)
+}
+
+# Here we add the inset plot # 
+par(new = TRUE, fig = c(0,0.6,0,0.6),bty = "l")
+
+# first make a sequence of the days that are in the tracking data #
+days <- seq.Date(as.Date(d.lux[1,1]),as.Date(d.lux[nrow(d.lux),1]),by = "day")
+
+# Make an empty plot so we can add things to it #
+plot(NA,
+     ylim = c(0,nrow(SOSA$Schedule)+1),
+     xlim = c(0,length(days)),
+     yaxt = "n",
+     xaxt = "n",
+     ylab = "Stop",
+     xlab = "Ordinal day")
+
+# add text to the axes #
+axis(1,at = seq(1,length(days),10),
+     labels = format(days[seq(1,length(days),10)],"%j"),cex = 0.8)
+axis(2, at = 1:nrow(SOSA$Schedule),labels = 1:nrow(SOSA$Schedule),las = 2, cex = 0.8)
+
+# determine when the change the colors - here we change the colors after the longest
+# duration (i.e., winter)
+
+winter <- which(SOSA$Schedule$duration == max(SOSA$Schedule$duration))
+
+# Loop through all the stops defined by MigSchedule and plot the duration of each
+# stop and the days the bird was there #
+
+for(i in 1:nrow(SOSA$Schedule)){
   
-  
-  # Here we add the inset plot # 
-  par(new = TRUE, fig = c(0,0.6,0,0.6),bty = "l")
-  
-  # first make a sequence of the days that are in the tracking data #
-  days <- seq.Date(as.Date(d.lux[1,1]),as.Date(d.lux[nrow(d.lux),1]),by = "day")
-  
-  # Make an empty plot so we can add things to it #
-  plot(NA,
-       ylim = c(0,nrow(SOSA$Schedule)+1),
-       xlim = c(0,length(days)),
-       yaxt = "n",
-       xaxt = "n",
-       ylab = "Stop",
-       xlab = "Ordinal day")
-  
-  # add text to the axes #
-  axis(1,at = seq(1,length(days),10),
-       labels = format(days[seq(1,length(days),10)],"%j"),cex = 0.8)
-  axis(2, at = 1:nrow(SOSA$Schedule),labels = 1:nrow(SOSA$Schedule),las = 2, cex = 0.8)
-  
-  # determine when the change the colors - here we change the colors after the longest
-  # duration (i.e., winter)
-  
-  winter <- which(SOSA$Schedule$duration == max(SOSA$Schedule$duration))
-  
-  # Loop through all the stops defined by MigSchedule and plot the duration of each
-  # stop and the days the bird was there #
-  
-  for(i in 1:nrow(SOSA$Schedule))
-    
-    # make a vector containing the days the bird was at the stop #
-    stopDur <- seq.Date(from = as.Date(SOSA$Schedule$arrival.date[i]),
-                        to = as.Date(SOSA$Schedule$departure.date[i]),
-                        by = "day")
+  # make a vector containing the days the bird was at the stop #
+  stopDur <- seq.Date(from = as.Date(SOSA$Schedule$arrival.date[i]),
+                      to = as.Date(SOSA$Schedule$departure.date[i]),
+                      by = "day")
   
   # find out which days in the tracking data correspond to the stop-over days #
   stopInDays <- which(days %in% stopDur)
@@ -566,64 +569,7 @@ for(i in (winter+1):nrow(SOSA$Schedule)){
   
   # add stop-over duration length to the end of the polygon #
   text(x = max(stopInDays)+10,y = i, length(stopInDays),cex = 0.5)
-  
-  dev.off() # turns out you need to close the device twice - not sure why exactly.
-  dev.off()
 }
 
-
-#Plot maps on satellite imagery with state and country borders.
-# There are quite a few ways to do this - but here is one way. 
-# Obtain a BlueMarble image manually then plot the results onto that 
-# The link below is a recent one - not much now cover
-# https://neo.sci.gsfc.nasa.gov/view.php?datasetId=BlueMarbleNG-TB&date=2004-07-01 #
-
-#Download and open raster.
-list.files(path = "T:/McDuffie/SOSA_GEO/SOSA_R/SOSA_589", pattern = NULL,
-           full.names = TRUE)
-BlueMarb <- raster::brick("T:/McDuffie/SOSA_GEO/SOSA_R/SOSA_589/BlueMarbleNG.tiff") 
-
-# Plot fall migration to set plot region #
-plot(FallMig)
-
-# add map using real-world colors #
-plotRGB(BlueMarb, colNA = "black", maxpixels = 6480000, add = TRUE)
-
-# add the migration path back #
-plot(FallMig, add = TRUE, col = "red")
-
-# add country borders # 
-plot(wrld_simpl, add = TRUE, border = "yellow")
-
-# add one of the stop-over locations #
-plot(SOSA$movements[[5]],add = TRUE, col = bpy.colors(20), alpha = 0.4, legend = FALSE)
-
-##### Here is another way to get border shapefiles ###
-# You can get the data directly from the raster package #
-
-# raster::getData("countries") # this returns an error but the data are available here 
-#'http://biogeo.ucdavis.edu/data/gadm2.8/countries_gadm28.rds'
-
-#Canada <- raster::getData("GADM", country = "Canada", level = 1)
-#States <- raster::getData("GADM", country = "United States", level = 1)
-
-#plot(Canada)
-#plot(States, add = TRUE)
-
-# Here is a third way # 
-
-plot(dismo::gmap(FallMig, type = "satellite", lonlat = TRUE))
-plot(FallMig, add = TRUE, col = "red")
-
-#Set tolerance values for South American equinox to remove erroneous migration paths.
-# See above
-
-#Questions-------------------------------------------------------------------------------------------------------
-#What is the ideal number of iterations to have for the MCMC model?
-# The way you have it set up now - 2000 iterations - then summarize, then 2000 then summarize then 5000 
-# is how I've done it in the past - you can do more but as long as you summarize between runs you 
-# are using all the data. A few thousand is probably enough - it looks good for this bird. 
-
-#During incubation, light-levels get skewed. Can I remove data points during the incubation period?
-# I set those locations to fixed  - another option is to just remove them. Both methods work and 
-# acheive pretty much the same thing. 
+dev.off() # turns out you need to close the device twice - not sure why exactly.
+dev.off() # here is the second close  - I didn't need this dev.off here
