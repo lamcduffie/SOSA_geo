@@ -507,7 +507,7 @@ winter <- which(SOSA$Schedule$duration == max(SOSA$Schedule$duration))
 
 # Below is a basic plot that resembles the OSFL map. There are no error bars on the dates because 
 # it's only a single bird - but here is the code to make the map. 
-tiff("C:/Users/lmcduffie/Desktop/Figure2.tiff", width = 3600, height = 3600, res = 600)
+tiff("C:/Users/lmcduffie/Desktop/Figure2.tiff", width = 5000, height = 5600, res = 600)
 FallMig <- raster::spLines(sp::SpatialPoints(cbind(c(CapLocs[1],SOSA$Schedule[1:winter,3]),# Longitudes
                                                    c(CapLocs[2],SOSA$Schedule[1:winter,6]))))
 
@@ -516,9 +516,9 @@ SpringMig <- raster::spLines(sp::SpatialPoints(SOSA$Schedule[winter:nrow(SOSA$Sc
 
 # Make original plot with spring and fall stops + the migraion lines #
  plot(FallMig)
-for(i in 1:winter)
+for(i in 1:winter){
   plot(SOSA$movements[[i]],add = TRUE,legend = FALSE)
-
+}
 plot(wrld_simpl, add = TRUE)
 points(CapLocs[1],CapLocs[2],cex = 2,pch = 19)
 
@@ -528,6 +528,7 @@ for(i in (winter+1):nrow(SOSA$Schedule))
        col = rev(bpy.colors(25)),
        add = TRUE,
        legend = FALSE)
+}
   
 # Here we add the inset plot # 
 par(new = TRUE, fig = c(0,0.6,0,0.6),bty = "l")
@@ -577,14 +578,7 @@ for(i in 1:nrow(SOSA$Schedule)){
   # add stop-over duration length to the end of the polygon #
   text(x = max(stopInDays)+10,y = i, length(stopInDays),cex = 0.5)
   
-  dev.off() # turns out you need to close the device twice - not sure why exactly.
-  dev.off() # here is the second close
-    
 }
 
-
-#### How do I export as .tiff file? This worked for SOSA 589 but not others. Receiving the following error messages:
-
-#Error in dev.off() : cannot shut down device 1 (the null device)
-#Error in polygon(x = c(stopInDays, rev(stopInDays)), y = c(rep(i - 0.25,  : 
-#plot.new has not been called yet
+dev.off() # turns out you need to close the device twice - not sure why exactly.
+dev.off() # here is the second close
