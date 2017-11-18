@@ -88,13 +88,13 @@ seed <- as.POSIXct(c("2016-12-01 04:00:00",
                      "2017-02-01 04:00:00"), format = "%Y-%m-%d %H:%M:%S", tz = "GMT")
 
 twl  <- findTwilights(tagdata = d.lux, 
-                      threshold = 1.5, 
+                      threshold = 3, 
                       include = seed,
                       dark.min = 0) # minimum dark period in minutes
 
 ##### Plot the light data and the twilights ######
 lightImage(tagdata = d.lux,
-           offset = 18)
+           offset = 19)
 tsimagePoints(twl$Twilight, 
               offset = 19, 
               pch = 16, cex = 0.5, 
@@ -160,16 +160,32 @@ tsimagePoints(twl$Twilight,
 # "2016-06-28 15:25:31 GMT" "2016-07-10 02:03:30 GMT"
 
 # This plots a polygon around the area that I used to determine Zenith Angles #
-polygon(x = as.POSIXct(c("2016-07-10","2016-07-10","2016-07-10","2016-06-28")),
+polygon(x = as.POSIXct(c("2016-07-10","2016-07-14","2016-07-14","2016-07-10")),
         y = c(4+24,4+24,14+24,14+24), 
         col = rgb(100,100,100,100,maxColorValue = 255),
         border = rgb(100,100,100,100,maxColorValue = 255))
 
 
-calib.dates <- as.POSIXct(c("2016-07-10","2016-07-14"), tz = "GMT")
+calib.dates <- as.POSIXct(c("2016-06-28","2016-06-30"), tz = "GMT")
 
 # Extract twilight data during calibration period
 cal.data<-subset(twl,twl$Twilight>=calib.dates[1] & twl$Twilight<=calib.dates[2])
+
+#Get calibration data into GeoLight format and calculate Sun-elevation level
+##change data format
+cal2 <- data.frame(tFirst = cal.data$Twilight[1:(nrow(cal.data)-1)],
+                   tSecond =  cal.data$Twilight[2:nrow( cal.data)],
+                   type = abs( cal.data$Rise[1:(nrow(cal.data)-1)]-2))
+
+##apply getElevation"
+sunAngle <- GeoLight::getElevation(twl = cal2,
+                                   known.coord = CapLocs,
+                                   plot = FALSE, 
+                                   lnorm.pars = FALSE)
+
+##sunAngle is the angle of the sun relative to the horizon where the horizon is zero. 
+##Positive values are above the horizon and negative values are below the horizon.
+sunAngle
 
 # Determine the sun elevation angle - here called the Zenith angle #
 # Calculate solar time from calibration data 
@@ -573,3 +589,68 @@ for(i in 1:nrow(SOSA$Schedule)){
 
 dev.off() # turns out you need to close the device twice - not sure why exactly.
 dev.off() # here is the second close  - I didn't need this dev.off here
+
+#Plot maps on satellite imagery with state and country borders.
+# There are quite a few ways to do this - but here is one way. 
+# Obtain a BlueMarble image manually then plot the results onto that 
+# The link below is a recent one - not much now cover
+# https://neo.sci.gsfc.nasa.gov/view.php?datasetId=BlueMarbleNG-TB&date=2004-07-01 #
+
+#Download and open raster.
+list.files(path = "T:/McDuffie/SOSA_GEO/SOSA_R/SOSA_589", pattern = NULL,
+           full.names = TRUE)
+BlueMarb <- raster::brick("T:/McDuffie/SOSA_GEO/SOSA_R/SOSA_589/BlueMarbleNG.tiff") 
+
+# Plot fall migration to set plot region #
+plot(FallMig)
+
+# add map using real-world colors #
+plotRGB(BlueMarb, colNA = "black", maxpixels = 6480000, add = TRUE)
+
+# add the migration path back #
+plot(FallMig, add = TRUE, col = "red")
+
+# add country borders # 
+plot(wrld_simpl, add = TRUE, border = "yellow")
+
+# add one of the stop-over locations #
+plot(SOSA$movements[[5]],add = TRUE, col = bpy.colors(20), alpha = 0.4, legend = FALSE)
+
+##### Here is another way to get border shapefiles ###
+# You can get the data directly from the raster package #
+
+# raster::getData("countries") # this returns an error but the data are available here 
+#'http://biogeo.ucdavis.edu/data/gadm2.8/countries_gadm28.rds'
+
+#Canada <- raster::getData("GADM", country = "Canada", level = 1)
+#States <- raster::getData("GADM", country = "United States", level = 1)
+
+#plot(Canada)
+#plot(States, add = TRUE)
+
+# Here is a third way # 
+
+plot(dismo::gmap(FallMig, type = "satellite", lonlat = TRUE))
+plot(FallMig, add = TRUE, col = "red")
+
+#Set tolerance values for South American equinox to remove erroneous migration paths.
+# See above
+
+#Questions-------------------------------------------------------------------------------------------------------
+#What is the ideal number of iterations to have for the MCMC model?
+# The way you have it set up now - 2000 iterations - then summarize, then 2000 then summarize then 5000 
+# is how I've done it in the past - you can do more but as long as you summarize between runs you 
+# are using all the data. A few thousand is probably enough - it looks good for this bird. 
+
+#During incubation, light-levels get skewed. Can I remove data points during the incubation period?
+# I set those locations to fixed  - another option is to just remove them. Both methods work and 
+# acheive pretty much the same thing. 
+
+
+
+
+
+
+
+
+
