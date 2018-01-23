@@ -492,7 +492,6 @@ str(LEYE,1)
 # Here is how to go about doing that using the results from the MigSchedule function 
 # Take a look at the migration schedule
 LEYE$Schedule
-
 # Here I define the winter location as the longest stop-over duration
 winter <- which(LEYE$Schedule$duration == max(LEYE$Schedule$duration))
 
@@ -573,59 +572,3 @@ for(i in 1:nrow(LEYE$Schedule)){
 }
 dev.off() # turns out you need to close the device twice - not sure why exactly.
 dev.off() # here is the second close  - I didn't need this dev.off here
-
-#Plot maps on satellite imagery with state and country borders.
-# There are quite a few ways to do this - but here is one way. 
-# Obtain a BlueMarble image manually then plot the results onto that 
-# The link below is a recent one - not much now cover
-# https://neo.sci.gsfc.nasa.gov/view.php?datasetId=BlueMarbleNG-TB&date=2004-07-01 #
-
-#Download and open raster.
-list.files(path = "T:/McDuffie/SOSA_GEO/SOSA_R/SOSA_589", pattern = NULL,
-           full.names = TRUE)
-BlueMarb <- raster::brick("T:/McDuffie/SOSA_GEO/SOSA_R/SOSA_589/BlueMarbleNG.tiff") 
-
-# Plot fall migration to set plot region #
-plot(FallMig)
-
-# add map using real-world colors #
-plotRGB(BlueMarb, colNA = "black", maxpixels = 6480000, add = TRUE)
-
-# add the migration path back #
-plot(FallMig, add = TRUE, col = "red")
-
-# add country borders # 
-plot(wrld_simpl, add = TRUE, border = "yellow")
-
-# add one of the stop-over locations #
-plot(SOSA$movements[[5]],add = TRUE, col = bpy.colors(20), alpha = 0.4, legend = FALSE)
-
-##### Here is another way to get border shapefiles ###
-# You can get the data directly from the raster package #
-
-# raster::getData("countries") # this returns an error but the data are available here 
-#'http://biogeo.ucdavis.edu/data/gadm2.8/countries_gadm28.rds'
-
-#Canada <- raster::getData("GADM", country = "Canada", level = 1)
-#States <- raster::getData("GADM", country = "United States", level = 1)
-
-#plot(Canada)
-#plot(States, add = TRUE)
-
-# Here is a third way # 
-
-plot(dismo::gmap(FallMig, type = "satellite", lonlat = TRUE))
-plot(FallMig, add = TRUE, col = "red")
-
-#Set tolerance values for South American equinox to remove erroneous migration paths.
-# See above
-
-#Questions-------------------------------------------------------------------------------------------------------
-#What is the ideal number of iterations to have for the MCMC model?
-# The way you have it set up now - 2000 iterations - then summarize, then 2000 then summarize then 5000 
-# is how I've done it in the past - you can do more but as long as you summarize between runs you 
-# are using all the data. A few thousand is probably enough - it looks good for this bird. 
-
-#During incubation, light-levels get skewed. Can I remove data points during the incubation period?
-# I set those locations to fixed  - another option is to just remove them. Both methods work and 
-# acheive pretty much the same thing. 
